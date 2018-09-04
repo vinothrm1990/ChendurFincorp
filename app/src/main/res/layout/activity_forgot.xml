@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:id="@+id/login_layout"
+    android:id="@+id/forgot_layout"
     android:gravity="center"
     android:background="@drawable/background"
     android:layout_height="match_parent"
-    tools:context=".activity.LoginActivity">
+    tools:context=".activity.ForgotActivity">
     <LinearLayout
         android:id="@+id/user_layout"
         android:gravity="center_horizontal"
@@ -22,15 +21,15 @@
     <LinearLayout
         android:id="@+id/phone_layout"
         android:layout_below="@+id/user_layout"
-        android:layout_marginTop="@dimen/_25sdp"
-        android:layout_marginBottom="@dimen/_10sdp"
+        android:layout_marginTop="@dimen/_15sdp"
+        android:layout_marginBottom="@dimen/_5sdp"
         android:layout_marginLeft="@dimen/_15sdp"
         android:layout_marginRight="@dimen/_15sdp"
         android:background="#10000000"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <studio.carbonylgroup.textfieldboxes.TextFieldBoxes
-            android:id="@+id/log_til_phone"
+            android:id="@+id/forgot_til_phone"
             android:layout_width="0dp"
             app:primaryColor="#FFF"
             android:layout_height="wrap_content"
@@ -40,12 +39,51 @@
             app:hasFocus="false"
             app:errorColor="@color/black"
             app:manualValidateError="true"
+            app:endIcon="@drawable/ic_go"
             app:iconSignifier="@drawable/ic_phone"
             app:isResponsiveIconColor="true"
             app:hasClearButton="true"
             app:labelText="Phone">
             <studio.carbonylgroup.textfieldboxes.ExtendedEditText
-                android:id="@+id/log_et_phone"
+                android:id="@+id/forgot_et_phone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:textColor="#FFF"
+                android:fontFamily="@font/lato_regular"
+                android:imeOptions="actionGo"
+                android:inputType="phone"
+                android:popupElevation="@dimen/_5sdp"
+                android:text="" />
+        </studio.carbonylgroup.textfieldboxes.TextFieldBoxes>
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/otp_layout"
+        android:layout_below="@+id/phone_layout"
+        android:layout_marginTop="@dimen/_5sdp"
+        android:layout_marginBottom="@dimen/_5sdp"
+        android:layout_marginLeft="@dimen/_15sdp"
+        android:layout_marginRight="@dimen/_15sdp"
+        android:background="#10000000"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <studio.carbonylgroup.textfieldboxes.TextFieldBoxes
+            android:id="@+id/forgot_til_otp"
+            android:layout_width="0dp"
+            app:primaryColor="#FFF"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="2"
+            android:paddingLeft="@dimen/_10sdp"
+            app:hasFocus="false"
+            app:errorColor="@color/black"
+            app:manualValidateError="true"
+            app:iconSignifier="@drawable/ic_otp"
+            app:isResponsiveIconColor="true"
+            app:hasClearButton="true"
+            app:labelText="Otp">
+            <studio.carbonylgroup.textfieldboxes.ExtendedEditText
+                android:id="@+id/forgot_et_otp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="10"
@@ -59,31 +97,31 @@
     </LinearLayout>
     <LinearLayout
         android:id="@+id/pass_layout"
-        android:layout_below="@+id/phone_layout"
-        android:layout_marginTop="@dimen/_10sdp"
-        android:layout_marginBottom="@dimen/_10sdp"
+        android:layout_below="@+id/otp_layout"
+        android:layout_marginTop="@dimen/_5sdp"
+        android:layout_marginBottom="@dimen/_5sdp"
         android:layout_marginLeft="@dimen/_15sdp"
         android:layout_marginRight="@dimen/_15sdp"
         android:background="#10000000"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <studio.carbonylgroup.textfieldboxes.TextFieldBoxes
-            android:id="@+id/log_til_pass"
-            app:errorColor="@color/black"
+            android:id="@+id/forgot_til_pass"
             android:layout_width="0dp"
-            app:manualValidateError="true"
             app:primaryColor="#FFF"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_weight="2"
             android:paddingLeft="@dimen/_10sdp"
             app:hasFocus="false"
+            app:errorColor="@color/black"
+            app:manualValidateError="true"
             app:iconSignifier="@drawable/ic_pass"
             app:isResponsiveIconColor="true"
             app:hasClearButton="true"
-            app:labelText="Password">
+            app:labelText="New Password">
             <studio.carbonylgroup.textfieldboxes.ExtendedEditText
-                android:id="@+id/log_et_pass"
+                android:id="@+id/forgot_et_pass"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="10"
@@ -96,39 +134,22 @@
         </studio.carbonylgroup.textfieldboxes.TextFieldBoxes>
     </LinearLayout>
     <LinearLayout
-        android:id="@+id/forgot_layout"
-        android:layout_marginTop="@dimen/_10sdp"
-        android:layout_marginLeft="@dimen/_15sdp"
-        android:layout_marginRight="@dimen/_15sdp"
-        android:layout_below="@+id/pass_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <TextView
-            android:id="@+id/log_tv_forgot"
-            android:textColor="#FFF"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="right"
-            android:text="Forgot Password?"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
-    <LinearLayout
         android:id="@+id/button_layout"
-        android:layout_marginTop="@dimen/_25sdp"
+        android:layout_marginTop="@dimen/_15sdp"
         android:layout_marginLeft="@dimen/_15sdp"
         android:layout_marginRight="@dimen/_15sdp"
         android:gravity="center"
         android:layout_marginBottom="@dimen/_10sdp"
-        android:layout_below="@+id/forgot_layout"
+        android:layout_below="@+id/pass_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <br.com.simplepass.loading_button_lib.customViews.CircularProgressButton
-            android:id="@+id/log_btn_login"
+            android:id="@+id/forgot_btn_update"
             android:textColor="#FFF"
             android:fontFamily="@font/lato_bold"
             android:gravity="center"
             android:textStyle="bold"
-            android:text="Login"
+            android:text="UPDATE"
             android:clickable="true"
             android:background="#50000000"
             android:textSize="20sp"
@@ -137,5 +158,21 @@
             app:spinning_bar_padding="@dimen/_5sdp"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_40sdp"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_marginBottom="@dimen/_10sdp"
+        android:layout_below="@+id/button_layout"
+        android:gravity="center_horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <android.support.design.widget.FloatingActionButton
+            android:layout_marginTop="@dimen/_5sdp"
+            android:layout_marginBottom="@dimen/_5sdp"
+            android:id="@+id/forgot_btn_back"
+            app:fabSize="auto"
+            android:backgroundTint="#50000000"
+            android:src="@drawable/ic_back"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
     </LinearLayout>
 </RelativeLayout>

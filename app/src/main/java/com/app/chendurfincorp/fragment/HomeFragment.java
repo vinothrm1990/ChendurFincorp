@@ -51,15 +51,15 @@ public class HomeFragment extends Fragment {
 
         int [] icons = new int[]{
 
-                R.drawable.ic_attendence,
-                R.drawable.ic_leave,
-                R.drawable.ic_payslip,
-                R.drawable.ic_queries
+                R.drawable.ic_attendence_home,
+                R.drawable.ic_leave_home,
+                R.drawable.ic_slip_home,
+                R.drawable.ic_query_home
 
         };
         HomeMenu menu = new HomeMenu("Attendence Entry", icons[0]);
         homeList.add(menu);
-            menu = new HomeMenu("Leave Entry", icons[1]);
+            menu = new HomeMenu("Leave Request", icons[1]);
             homeList.add(menu);
             menu = new HomeMenu("Pay Slip", icons[2]);
             homeList.add(menu);

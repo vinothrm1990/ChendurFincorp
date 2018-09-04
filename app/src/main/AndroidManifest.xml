@@ -33,8 +33,19 @@
         <activity android:name=".activity.LoginActivity" />
         <activity
             android:name=".activity.HomeActivity"
-            android:label="@string/title_activity_home"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".activity.LeaveActivity"
+            android:parentActivityName=".activity.HomeActivity" />
+        <activity
+            android:name=".activity.QueryActivity"
+            android:parentActivityName=".activity.HomeActivity" />
+        <activity
+            android:name=".activity.PayActivity"
+            android:parentActivityName=".activity.HomeActivity" />
+        <activity android:name=".activity.ForgotActivity" />
+        <activity android:name=".activity.AttendenceActivity"
+            android:parentActivityName=".activity.HomeActivity"/>
     </application>
 
 </manifest>

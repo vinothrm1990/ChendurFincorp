@@ -29,6 +29,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import spencerstudios.com.bungeelib.Bungee;
 import studio.carbonylgroup.textfieldboxes.ExtendedEditText;
 import studio.carbonylgroup.textfieldboxes.TextFieldBoxes;
 
@@ -73,7 +74,10 @@ public class LoginActivity extends AppCompatActivity implements InternetConnecti
                     emptyfeilds = true;
                     tilPhone.validate();
                     etPhone.setError("Details Required");
-                }if (pass.length()==0){
+                }if (phone.length()<10){
+                    emptyfeilds = true;
+                    etPhone.setError("Enter Valid Number");
+                } if (pass.length()==0){
                     emptyfeilds = true;
                     tilpass.validate();
                     etpass.setError("Details Required");
@@ -81,6 +85,14 @@ public class LoginActivity extends AppCompatActivity implements InternetConnecti
                     btnLogin.startAnimation();
                     new login(LoginActivity.this, phone, pass).execute();
                 }
+            }
+        });
+        tvForgot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                startActivity(new Intent(LoginActivity.this, ForgotActivity.class));
+                Bungee.split(LoginActivity.this);
             }
         });
 

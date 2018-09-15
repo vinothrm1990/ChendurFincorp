@@ -1,25 +1,34 @@
 package com.app.chendurfincorp.activity;
 
 import android.app.ActionBar;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.provider.Settings;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.DatePicker;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.andrognito.flashbar.Flashbar;
 import com.app.chendurfincorp.R;
 import com.app.chendurfincorp.helper.Constants;
+import com.gmail.samehadar.iosdialog.IOSDialog;
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker;
 import com.treebo.internetavailabilitychecker.InternetConnectivityListener;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -27,6 +36,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 import br.com.simplepass.loading_button_lib.customViews.CircularProgressButton;
@@ -46,6 +56,10 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
     TextView tvEmpId, tvStartDate, tvEndDate;
     ExtendedEditText etReason;
     Calendar scalendar, ecalendar;
+    Flashbar flashbar;
+    String id, name;
+    IOSDialog iosDialog;
+    AlertDialog alertDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +68,14 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
 
         internetAvailabilityChecker = InternetAvailabilityChecker.getInstance();
         internetAvailabilityChecker.addInternetConnectivityListener(this);
+
+        flashbar = networkStatus();
+
+        Constants.pref = getApplicationContext().getSharedPreferences("CF",MODE_PRIVATE);
+        Constants.editor = Constants.pref.edit();
+
+        id = Constants.pref.getString("id", "");
+        name = Constants.pref.getString("name", "");
 
         TextView title = new TextView(getApplicationContext());
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT);
@@ -67,6 +89,13 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
         getSupportActionBar().setCustomView(title);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        String myFormat = "dd/MM/yyyy"; //In which you need put here
+        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.US);
+        Date dt = new Date();
+        final String date = sdf.format(dt);
+
+        new leavestatus(this, id, date).execute();
+
         leaveLayout = findViewById(R.id.leave_layout);
         etReason = findViewById(R.id.leave_et_reason);
         tvEmpId = findViewById(R.id.leave_tv_empid);
@@ -74,6 +103,7 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
         tvEndDate = findViewById(R.id.leave_tv_edate);
         btnSubmit = findViewById(R.id.leave_btn_submit);
 
+        tvEmpId.setText(id);
         scalendar = Calendar.getInstance();
         ecalendar = Calendar.getInstance();
         final DatePickerDialog.OnDateSetListener sdate = new DatePickerDialog.OnDateSetListener() {
@@ -129,6 +159,9 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
                         tvEndDate.getText().toString().trim().equalsIgnoreCase("ending date")){
                     Snackbar snack = Snackbar.make(leaveLayout, "Date Feilds are Empty", Snackbar.LENGTH_LONG);
                     view = snack.getView();
+                    FrameLayout.LayoutParams params =(FrameLayout.LayoutParams)view.getLayoutParams();
+                    params.gravity = Gravity.TOP;
+                    view.setLayoutParams(params);
                     TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
                     tv.setTextColor(Color.WHITE);
                     snack.show();
@@ -136,15 +169,19 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
                     etReason.setError("Details Required");
                     Snackbar snack = Snackbar.make(leaveLayout, "Reason Feild is Empty", Snackbar.LENGTH_LONG);
                     view = snack.getView();
+                    FrameLayout.LayoutParams params =(FrameLayout.LayoutParams)view.getLayoutParams();
+                    params.gravity = Gravity.TOP;
+                    view.setLayoutParams(params);
                     TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
                     tv.setTextColor(Color.WHITE);
                     snack.show();
                 }else {
+
                     String sDate = tvStartDate.getText().toString().trim();
                     String eDate = tvEndDate.getText().toString().trim();
                     String reason = etReason.getText().toString().trim();
-                    btnSubmit.startAnimation();
-                    //new leave(LeaveActivity.this, sDate, eDate, reason).execute();
+
+                    new leave(LeaveActivity.this, id, name, sDate, eDate, reason, date).execute();
                 }
             }
         });
@@ -153,7 +190,7 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
 
     private void setStartDateFormat() {
 
-        String myFormat = "dd/MM/yy"; //In which you need put here
+        String myFormat = "dd/MM/yyyy"; //In which you need put here
         SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.US);
 
         tvStartDate.setText(sdf.format(scalendar.getTime()));
@@ -162,7 +199,7 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
 
     private void setEndDateFormat() {
 
-        String myFormat = "dd/MM/yy"; //In which you need put here
+        String myFormat = "dd/MM/yyyy"; //In which you need put here
         SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.US);
 
         tvEndDate.setText(sdf.format(ecalendar.getTime()));
@@ -173,16 +210,9 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
     public void onInternetConnectivityChanged(boolean isConnected) {
 
         if (!isConnected) {
-            Snackbar snack = Snackbar.make(leaveLayout, "Check your Internet Connection", Snackbar.LENGTH_LONG);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.RED);
-            snack.show();
+           flashbar.show();
         } else if (isConnected){
-            Snackbar snack = Snackbar.make(leaveLayout, "Connected to the Internet", Snackbar.LENGTH_SHORT);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.GREEN);
+            flashbar.dismiss();
         }
     }
 
@@ -193,17 +223,61 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
         internetAvailabilityChecker.removeInternetConnectivityChangeListener(this);
     }
 
+    private Flashbar networkStatus() {
+        return new Flashbar.Builder(this)
+                .gravity(Flashbar.Gravity.BOTTOM)
+                .titleSizeInSp(18)
+                .messageSizeInSp(14)
+                .title("Network Status:")
+                .message("Check your Internet Connection")
+                .titleColorRes(R.color.red)
+                .messageColorRes(R.color.red)
+                .backgroundColorRes(R.color.translucent_black)
+                .showOverlay()
+                .titleTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .messageTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_regular.ttf"))
+                .primaryActionTextTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .primaryActionText("Goto")
+                .primaryActionTextColorRes(R.color.black)
+                .primaryActionTextSizeInSp(10)
+                .primaryActionTapListener(new Flashbar.OnActionTapListener() {
+                    @Override
+                    public void onActionTapped(@NotNull Flashbar bar) {
+                        bar.dismiss();
+                        startActivity(new Intent(Settings.ACTION_SETTINGS));
+                    }
+                })
+                .build();
+    }
+
     private class leave extends AsyncTask<String, Integer, String>{
 
         Context context;
-        String sdate, edate, reason;
+        String id, name, sdate, edate, reason, date;
         String url = Constants.BASE_URL + Constants.LEAVE;
 
-        public leave(Context context, String sdate, String edate, String reason) {
+        public leave(Context context, String id, String name, String sdate, String edate, String reason, String date) {
             this.context = context;
+            this.id = id;
+            this.name = name;
             this.sdate = sdate;
             this.edate = edate;
             this.reason = reason;
+            this.date = date;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            iosDialog = new IOSDialog.Builder(LeaveActivity.this)
+                    .setTitle("Please Wait...")
+                    .setTitleColor(getResources().getColor(R.color.white))
+                    .setSpinnerColorRes(R.color.dark_gray)
+                    .setCancelable(true)
+                    .setSpinnerClockwise(true)
+                    .build();
+            iosDialog.show();
         }
 
         @Override
@@ -213,9 +287,12 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
             Response response = null;
             OkHttpClient client = new OkHttpClient();
             RequestBody body = new FormBody.Builder()
+                    .add("id", id)
+                    .add("name", name)
                     .add("sdate", sdate)
                     .add("edate", edate)
                     .add("reason", reason)
+                    .add("date", date)
                     .build();
             Request request = new Request.Builder()
                     .url(url)
@@ -241,6 +318,7 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
         protected void onPostExecute(String jsonData) {
             super.onPostExecute(jsonData);
 
+            iosDialog.dismiss();
             JSONObject jonj = null;
             try {
                 if (jsonData != null) {
@@ -248,18 +326,26 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
                     if (jonj.getString("status").equalsIgnoreCase(
                             "success")) {
 
-                        String data = jonj.getString("message");
-                        JSONArray array = new JSONArray(data);
-                        JSONObject jcat = array.getJSONObject(0);
-
-                        btnSubmit.stopAnimation();
-                        Snackbar snack = Snackbar.make(leaveLayout, "Submitted Successfully", Snackbar.LENGTH_LONG);
+                        Snackbar snack = Snackbar.make(leaveLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
                         View view = snack.getView();
                         TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
                         tv.setTextColor(Color.GREEN);
                         snack.show();
 
+                        String sdate = tvStartDate.getText().toString().trim();
+                        String edate = tvEndDate.getText().toString().trim();
+                        String reason = etReason.getText().toString().trim();
+
+                        tvStartDate.setText(sdate);
+                        tvStartDate.setEnabled(false);
+                        tvEndDate.setText(edate);
+                        tvEndDate.setEnabled(false);
+                        etReason.setText(reason);
+                        etReason.setEnabled(false);
+                        btnSubmit.setVisibility(View.GONE);
+
                     } else {
+
                         Snackbar snack = Snackbar.make(leaveLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
                         View view = snack.getView();
                         TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
@@ -267,6 +353,7 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
                         snack.show();
                     }
                 }else {
+
                     Snackbar snack = Snackbar.make(leaveLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
                     View view = snack.getView();
                     TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
@@ -275,8 +362,250 @@ public class LeaveActivity extends AppCompatActivity implements InternetConnecti
                 }
             }catch (JSONException e) {
                 e.printStackTrace();
+
             }
 
         }
     }
+
+    private class leavestatus extends AsyncTask<String, Integer, String>{
+
+        Context context;
+        String id, date;
+        String url = Constants.BASE_URL + Constants.LEAVESTATUS;
+
+        public leavestatus(Context context, String id, String date) {
+            this.context = context;
+            this.id = id;
+            this.date = date;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            iosDialog = new IOSDialog.Builder(LeaveActivity.this)
+                    .setTitle("Please Wait...")
+                    .setTitleColor(getResources().getColor(R.color.white))
+                    .setSpinnerColorRes(R.color.dark_gray)
+                    .setCancelable(true)
+                    .setSpinnerClockwise(true)
+                    .build();
+            iosDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+
+            String jsonData = null;
+            Response response = null;
+            OkHttpClient client = new OkHttpClient();
+            RequestBody body = new FormBody.Builder()
+                    .add("id", id)
+                    .add("date", date)
+                    .build();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(body)
+                    .build();
+            Call call = client.newCall(request);
+
+            try {
+                response = call.execute();
+
+                if (response.isSuccessful()) {
+                    jsonData = response.body().string();
+                } else {
+                    jsonData = null;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return jsonData;
+        }
+
+        @Override
+        protected void onPostExecute(String jsonData) {
+            super.onPostExecute(jsonData);
+
+            iosDialog.dismiss();
+            JSONObject jonj = null;
+            try {
+                if (jsonData != null) {
+                    jonj = new JSONObject(jsonData);
+                    if (jonj.getString("status").equalsIgnoreCase(
+                            "hold")) {
+
+                        Snackbar snack = Snackbar.make(leaveLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
+                        View view = snack.getView();
+                        TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
+                        tv.setTextColor(Color.YELLOW);
+                        snack.show();
+
+                        statusPendingDialog();
+
+                        String sdate = jonj.getString("start_date");
+                        String edate = jonj.getString("end_date");
+                        String reason = jonj.getString("query");
+
+                        tvStartDate.setText(sdate);
+                        tvStartDate.setEnabled(false);
+                        tvEndDate.setText(edate);
+                        tvEndDate.setEnabled(false);
+                        etReason.setText(reason);
+                        etReason.setEnabled(false);
+                        btnSubmit.setVisibility(View.GONE);
+
+                    } else if (jonj.getString("status").equalsIgnoreCase(
+                            "decline")){
+
+                        Snackbar snack = Snackbar.make(leaveLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
+                        View view = snack.getView();
+                        TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
+                        tv.setTextColor(Color.RED);
+                        snack.show();
+
+                        statusDeclineDialog();
+
+                        String sdate = jonj.getString("start_date");
+                        String edate = jonj.getString("end_date");
+                        String reason = jonj.getString("query");
+
+                        tvStartDate.setText(sdate);
+                        tvStartDate.setEnabled(false);
+                        tvEndDate.setText(edate);
+                        tvEndDate.setEnabled(false);
+                        etReason.setText(reason);
+                        etReason.setEnabled(false);
+                        btnSubmit.setVisibility(View.GONE);
+
+                    }
+                    else if (jonj.getString("status").equalsIgnoreCase(
+                            "approve")){
+
+                        Snackbar snack = Snackbar.make(leaveLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
+                        View view = snack.getView();
+                        TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
+                        tv.setTextColor(Color.GREEN);
+                        snack.show();
+
+                        statusApproveDialog();
+
+                        String sdate = jonj.getString("start_date");
+                        String edate = jonj.getString("end_date");
+                        String reason = jonj.getString("query");
+
+                        tvStartDate.setText(sdate);
+                        tvStartDate.setEnabled(false);
+                        tvEndDate.setText(edate);
+                        tvEndDate.setEnabled(false);
+                        etReason.setText(reason);
+                        etReason.setEnabled(false);
+                        btnSubmit.setVisibility(View.GONE);
+
+                    }
+                    else if (jonj.getString("status").equalsIgnoreCase(
+                            "empty")){
+
+                        Snackbar snack = Snackbar.make(leaveLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
+                        View view = snack.getView();
+                        TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
+                        tv.setTextColor(Color.GREEN);
+                        snack.show();
+
+                    }
+                }else {
+
+                    Snackbar snack = Snackbar.make(leaveLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
+                    View view = snack.getView();
+                    TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
+                    tv.setTextColor(Color.YELLOW);
+                    snack.show();
+                }
+            }catch (JSONException e) {
+                e.printStackTrace();
+
+            }
+
+        }
+    }
+
+    private void statusPendingDialog() {
+
+        final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        final View dialogView = inflater.inflate(R.layout.status_dialog, null);
+        dialogBuilder.setView(dialogView);
+        dialogBuilder.setCancelable(false);
+
+        TextView textView = dialogView.findViewById(R.id.tv_status);
+        textView.setTextColor(getResources().getColor(R.color.yellow));
+        textView.setText("Request Pending");
+        ImageView imageView = dialogView.findViewById(R.id.iv_close);
+
+        alertDialog = dialogBuilder.create();
+
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                alertDialog.dismiss();
+            }
+        });
+
+        alertDialog.show();
+    }
+
+    private void statusDeclineDialog() {
+
+        final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        final View dialogView = inflater.inflate(R.layout.status_dialog, null);
+        dialogBuilder.setView(dialogView);
+        dialogBuilder.setCancelable(false);
+
+        TextView textView = dialogView.findViewById(R.id.tv_status);
+        textView.setTextColor(getResources().getColor(R.color.red));
+        textView.setText("Request Declined");
+        ImageView imageView = dialogView.findViewById(R.id.iv_close);
+
+        alertDialog = dialogBuilder.create();
+
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                alertDialog.dismiss();
+            }
+        });
+
+        alertDialog.show();
+    }
+
+    private void statusApproveDialog() {
+
+        final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        final View dialogView = inflater.inflate(R.layout.status_dialog, null);
+        dialogBuilder.setView(dialogView);
+        dialogBuilder.setCancelable(false);
+
+        TextView textView = dialogView.findViewById(R.id.tv_status);
+        textView.setTextColor(getResources().getColor(R.color.green));
+        textView.setText("Request Approved");
+        ImageView imageView = dialogView.findViewById(R.id.iv_close);
+
+        alertDialog = dialogBuilder.create();
+
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                alertDialog.dismiss();
+            }
+        });
+
+        alertDialog.show();
+    }
+
 }

@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentTransaction;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -20,14 +22,18 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.andrognito.flashbar.Flashbar;
 import com.app.chendurfincorp.R;
 import com.app.chendurfincorp.fragment.HomeFragment;
 import com.app.chendurfincorp.helper.Constants;
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker;
 import com.treebo.internetavailabilitychecker.InternetConnectivityListener;
+
+import org.jetbrains.annotations.NotNull;
 
 public class HomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, InternetConnectivityListener {
@@ -35,6 +41,7 @@ public class HomeActivity extends AppCompatActivity
     DrawerLayout drawer;
     InternetAvailabilityChecker internetAvailabilityChecker;
     AlertDialog alertDialog;
+    Flashbar flashbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +55,8 @@ public class HomeActivity extends AppCompatActivity
 
         Constants.pref = getApplicationContext().getSharedPreferences("CF",MODE_PRIVATE);
         Constants.editor = Constants.pref.edit();
+
+        flashbar = networkStatus();
 
         TextView title = new TextView(getApplicationContext());
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT);
@@ -70,8 +79,13 @@ public class HomeActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
+        String ename = Constants.pref.getString("name", "");
+
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+        View header=navigationView.getHeaderView(0);
+        TextView name = header.findViewById(R.id.navname);
+        name.setText(ename);
     }
 
     @Override
@@ -171,16 +185,9 @@ public class HomeActivity extends AppCompatActivity
     @Override
     public void onInternetConnectivityChanged(boolean isConnected) {
         if (!isConnected) {
-            Snackbar snack = Snackbar.make(drawer, "Check your Internet Connection", Snackbar.LENGTH_LONG);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.RED);
-            snack.show();
+            flashbar.show();
         } else if (isConnected){
-            Snackbar snack = Snackbar.make(drawer, "Connected to the Internet", Snackbar.LENGTH_SHORT);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.GREEN);
+            flashbar.dismiss();
         }
     }
 
@@ -189,5 +196,32 @@ public class HomeActivity extends AppCompatActivity
         super.onDestroy();
 
         internetAvailabilityChecker.removeInternetConnectivityChangeListener(this);
+    }
+
+    private Flashbar networkStatus() {
+        return new Flashbar.Builder(this)
+                .gravity(Flashbar.Gravity.BOTTOM)
+                .titleSizeInSp(18)
+                .messageSizeInSp(14)
+                .title("Network Status:")
+                .message("Check your Internet Connection")
+                .titleColorRes(R.color.red)
+                .messageColorRes(R.color.red)
+                .backgroundColorRes(R.color.translucent_black)
+                .showOverlay()
+                .titleTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .messageTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_regular.ttf"))
+                .primaryActionTextTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .primaryActionText("Goto")
+                .primaryActionTextColorRes(R.color.black)
+                .primaryActionTextSizeInSp(10)
+                .primaryActionTapListener(new Flashbar.OnActionTapListener() {
+                    @Override
+                    public void onActionTapped(@NotNull Flashbar bar) {
+                        bar.dismiss();
+                        startActivity(new Intent(Settings.ACTION_SETTINGS));
+                    }
+                })
+                .build();
     }
 }

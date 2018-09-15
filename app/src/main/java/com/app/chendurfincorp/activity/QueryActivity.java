@@ -2,26 +2,36 @@ package com.app.chendurfincorp.activity;
 
 import android.app.ActionBar;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.provider.Settings;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.andrognito.flashbar.Flashbar;
 import com.app.chendurfincorp.R;
 import com.app.chendurfincorp.helper.Constants;
+import com.gmail.samehadar.iosdialog.IOSDialog;
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker;
 import com.treebo.internetavailabilitychecker.InternetConnectivityListener;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import br.com.simplepass.loading_button_lib.customViews.CircularProgressButton;
 import okhttp3.Call;
@@ -38,6 +48,10 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
     RelativeLayout queryLayout;
     CircularProgressButton btnSubmit;
     ExtendedEditText etMessage;
+    TextView tvEmpId;
+    Flashbar flashbar;
+    String id, name;
+    IOSDialog iosDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +60,8 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
 
         internetAvailabilityChecker = InternetAvailabilityChecker.getInstance();
         internetAvailabilityChecker.addInternetConnectivityListener(this);
+
+        flashbar = networkStatus();
 
         TextView title = new TextView(getApplicationContext());
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT);
@@ -59,9 +75,18 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
         getSupportActionBar().setCustomView(title);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        Constants.pref = getApplicationContext().getSharedPreferences("CF",MODE_PRIVATE);
+        Constants.editor = Constants.pref.edit();
+
+        id = Constants.pref.getString("id", "");
+        name = Constants.pref.getString("name", "");
+
         queryLayout = findViewById(R.id.queries_layout);
         etMessage = findViewById(R.id.query_et_message);
         btnSubmit = findViewById(R.id.query_btn_submit);
+        tvEmpId = findViewById(R.id.query_tv_empid);
+
+        tvEmpId.setText(id);
 
         btnSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -71,13 +96,19 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
                     etMessage.setError("Details Required");
                     Snackbar snack = Snackbar.make(queryLayout, "Message Feild is Empty", Snackbar.LENGTH_LONG);
                     view = snack.getView();
+                    FrameLayout.LayoutParams params =(FrameLayout.LayoutParams)view.getLayoutParams();
+                    params.gravity = Gravity.TOP;
+                    view.setLayoutParams(params);
                     TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
                     tv.setTextColor(Color.WHITE);
                     snack.show();
                 }else {
+                    String myFormat = "dd/MM/yyyy"; //In which you need put here
+                    SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.US);
+                    Date dt = new Date();
+                    String date = sdf.format(dt);
                     String message = etMessage.getText().toString().trim();
-                    btnSubmit.startAnimation();
-                    //new query(QueryActivity.this, message).execute();
+                    new query(QueryActivity.this, id, name, message, date).execute();
                 }
             }
         });
@@ -88,16 +119,9 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
     public void onInternetConnectivityChanged(boolean isConnected) {
 
         if (!isConnected) {
-            Snackbar snack = Snackbar.make(queryLayout, "Check your Internet Connection", Snackbar.LENGTH_LONG);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.RED);
-            snack.show();
+            flashbar.show();
         } else if (isConnected){
-            Snackbar snack = Snackbar.make(queryLayout, "Connected to the Internet", Snackbar.LENGTH_SHORT);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.GREEN);
+           flashbar.dismiss();
         }
     }
 
@@ -108,15 +132,59 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
         internetAvailabilityChecker.removeInternetConnectivityChangeListener(this);
     }
 
+    private Flashbar networkStatus() {
+        return new Flashbar.Builder(this)
+                .gravity(Flashbar.Gravity.BOTTOM)
+                .titleSizeInSp(18)
+                .messageSizeInSp(14)
+                .title("Network Status:")
+                .message("Check your Internet Connection")
+                .titleColorRes(R.color.red)
+                .messageColorRes(R.color.red)
+                .backgroundColorRes(R.color.translucent_black)
+                .showOverlay()
+                .titleTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .messageTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_regular.ttf"))
+                .primaryActionTextTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .primaryActionText("Goto")
+                .primaryActionTextColorRes(R.color.black)
+                .primaryActionTextSizeInSp(10)
+                .primaryActionTapListener(new Flashbar.OnActionTapListener() {
+                    @Override
+                    public void onActionTapped(@NotNull Flashbar bar) {
+                        bar.dismiss();
+                        startActivity(new Intent(Settings.ACTION_SETTINGS));
+                    }
+                })
+                .build();
+    }
+
     private class query extends AsyncTask<String, Integer, String> {
 
         Context context;
-        String message;
+        String id, name, message, date;
         String url = Constants.BASE_URL + Constants.QUERIES;
 
-        public query(Context context, String message) {
+        public query(Context context, String id, String name, String message, String date) {
             this.context = context;
+            this.id = id;
+            this.name = name;
             this.message = message;
+            this.date = date;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            iosDialog = new IOSDialog.Builder(QueryActivity.this)
+                    .setTitle("Please Wait...")
+                    .setTitleColor(getResources().getColor(R.color.white))
+                    .setSpinnerColorRes(R.color.dark_gray)
+                    .setCancelable(true)
+                    .setSpinnerClockwise(true)
+                    .build();
+            iosDialog.show();
         }
 
         @Override
@@ -126,7 +194,10 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
             Response response = null;
             OkHttpClient client = new OkHttpClient();
             RequestBody body = new FormBody.Builder()
+                    .add("id", id)
+                    .add("name", name)
                     .add("message", message)
+                    .add("date", date)
                     .build();
             Request request = new Request.Builder()
                     .url(url)
@@ -152,6 +223,7 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
         protected void onPostExecute(String jsonData) {
             super.onPostExecute(jsonData);
 
+            iosDialog.dismiss();
             JSONObject jonj = null;
             try {
                 if (jsonData != null) {
@@ -159,13 +231,11 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
                     if (jonj.getString("status").equalsIgnoreCase(
                             "success")) {
 
-                        String data = jonj.getString("message");
-                        JSONArray array = new JSONArray(data);
-                        JSONObject jcat = array.getJSONObject(0);
-
-                        btnSubmit.stopAnimation();
-                        Snackbar snack = Snackbar.make(queryLayout, "Submitted Successfully", Snackbar.LENGTH_LONG);
+                        Snackbar snack = Snackbar.make(queryLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
                         View view = snack.getView();
+                        FrameLayout.LayoutParams params =(FrameLayout.LayoutParams)view.getLayoutParams();
+                        params.gravity = Gravity.BOTTOM;
+                        view.setLayoutParams(params);
                         TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
                         tv.setTextColor(Color.GREEN);
                         snack.show();
@@ -173,13 +243,19 @@ public class QueryActivity extends AppCompatActivity implements InternetConnecti
                     } else {
                         Snackbar snack = Snackbar.make(queryLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
                         View view = snack.getView();
+                        FrameLayout.LayoutParams params =(FrameLayout.LayoutParams)view.getLayoutParams();
+                        params.gravity = Gravity.BOTTOM;
+                        view.setLayoutParams(params);
                         TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
-                        tv.setTextColor(Color.YELLOW);
+                        tv.setTextColor(Color.RED);
                         snack.show();
                     }
                 }else {
-                    Snackbar snack = Snackbar.make(queryLayout, jonj.getString("message"), Snackbar.LENGTH_LONG);
+                    Snackbar snack = Snackbar.make(queryLayout, "", Snackbar.LENGTH_LONG);
                     View view = snack.getView();
+                    FrameLayout.LayoutParams params =(FrameLayout.LayoutParams)view.getLayoutParams();
+                    params.gravity = Gravity.TOP;
+                    view.setLayoutParams(params);
                     TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
                     tv.setTextColor(Color.YELLOW);
                     snack.show();

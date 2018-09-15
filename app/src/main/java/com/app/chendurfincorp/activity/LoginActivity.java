@@ -5,17 +5,24 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.provider.Settings;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import com.andrognito.flashbar.Flashbar;
 import com.app.chendurfincorp.R;
 import com.app.chendurfincorp.helper.Constants;
+import com.gmail.samehadar.iosdialog.IOSDialog;
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker;
 import com.treebo.internetavailabilitychecker.InternetConnectivityListener;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,6 +48,8 @@ public class LoginActivity extends AppCompatActivity implements InternetConnecti
     TextView tvForgot;
     ExtendedEditText etPhone, etpass;
     CircularProgressButton btnLogin;
+    Flashbar flashbar;
+    IOSDialog iosDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +62,8 @@ public class LoginActivity extends AppCompatActivity implements InternetConnecti
 
         Constants.pref = getApplicationContext().getSharedPreferences("CF",MODE_PRIVATE);
         Constants.editor = Constants.pref.edit();
+
+        flashbar = networkStatus();
 
         loginLayout = findViewById(R.id.login_layout);
         tilPhone = findViewById(R.id.log_til_phone);
@@ -82,7 +93,6 @@ public class LoginActivity extends AppCompatActivity implements InternetConnecti
                     tilpass.validate();
                     etpass.setError("Details Required");
                 }if (emptyfeilds == false) {
-                    btnLogin.startAnimation();
                     new login(LoginActivity.this, phone, pass).execute();
                 }
             }
@@ -104,21 +114,42 @@ public class LoginActivity extends AppCompatActivity implements InternetConnecti
 
         internetAvailabilityChecker.removeInternetConnectivityChangeListener(this);
     }
+
     @Override
     public void onInternetConnectivityChanged(boolean isConnected) {
 
         if (!isConnected) {
-            Snackbar snack = Snackbar.make(loginLayout, "Check your Internet Connection", Snackbar.LENGTH_LONG);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.RED);
-            snack.show();
+            flashbar.show();
         } else if (isConnected){
-            Snackbar snack = Snackbar.make(loginLayout, "Connected to the Internet", Snackbar.LENGTH_SHORT);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.GREEN);
+            flashbar.dismiss();
         }
+    }
+
+    private Flashbar networkStatus() {
+        return new Flashbar.Builder(this)
+                .gravity(Flashbar.Gravity.BOTTOM)
+                .titleSizeInSp(18)
+                .messageSizeInSp(14)
+                .title("Network Status:")
+                .message("Check your Internet Connection")
+                .titleColorRes(R.color.red)
+                .messageColorRes(R.color.red)
+                .backgroundColorRes(R.color.translucent_black)
+                .showOverlay()
+                .titleTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .messageTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_regular.ttf"))
+                .primaryActionTextTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .primaryActionText("Goto")
+                .primaryActionTextColorRes(R.color.black)
+                .primaryActionTextSizeInSp(10)
+                .primaryActionTapListener(new Flashbar.OnActionTapListener() {
+                    @Override
+                    public void onActionTapped(@NotNull Flashbar bar) {
+                        bar.dismiss();
+                        startActivity(new Intent(Settings.ACTION_SETTINGS));
+                    }
+                })
+                .build();
     }
 
     private class login extends AsyncTask<String, Integer, String>{
@@ -131,6 +162,20 @@ public class LoginActivity extends AppCompatActivity implements InternetConnecti
             this.context = context;
             this.phone = phone;
             this.pass = pass;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            iosDialog = new IOSDialog.Builder(LoginActivity.this)
+                    .setTitle("Please Wait...")
+                    .setTitleColor(getResources().getColor(R.color.white))
+                    .setSpinnerColorRes(R.color.dark_gray)
+                    .setCancelable(true)
+                    .setSpinnerClockwise(true)
+                    .build();
+            iosDialog.show();
         }
 
         @Override
@@ -167,6 +212,7 @@ public class LoginActivity extends AppCompatActivity implements InternetConnecti
         protected void onPostExecute(String jsonData) {
             super.onPostExecute(jsonData);
 
+            iosDialog.dismiss();
             JSONObject jonj = null;
             try {
                 if (jsonData != null) {
@@ -179,13 +225,14 @@ public class LoginActivity extends AppCompatActivity implements InternetConnecti
                         JSONObject jcat = array.getJSONObject(0);
 
                         Constants.editor.putBoolean("isLogged", true);
-                        Constants.editor.putString(Constants.id, jcat.getString("id"));
+                        Constants.editor.putString(Constants.id, jcat.getString("emp_id"));
+                        Constants.editor.putString(Constants.name, jcat.getString("emp_name"));
                         Constants.editor.putString(Constants.phone, jcat.getString("username"));
                         Constants.editor.putString(Constants.password, jcat.getString("password"));
                         Constants.editor.putString(Constants.category, jcat.getString("category"));
                         Constants.editor.commit();
+                        Constants.editor.apply();
 
-                        btnLogin.stopAnimation();
                         startActivity(new Intent(LoginActivity.this, HomeActivity.class));
                         finish();
 

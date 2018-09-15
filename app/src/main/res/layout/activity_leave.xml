@@ -52,7 +52,7 @@
                     <TextView
                         android:id="@+id/leave_tv_empid"
                         android:paddingRight="@dimen/_5sdp"
-                        android:paddingLeft="@dimen/_5sdp"
+                        android:paddingLeft="@dimen/_10sdp"
                         android:layout_marginTop="@dimen/_5sdp"
                         android:layout_marginBottom="@dimen/_5sdp"
                         android:layout_weight="0.7"
@@ -131,7 +131,7 @@
                             android:textColorHint="#FFF"
                             android:hint="@string/lhint"
                             android:fontFamily="@font/lato_regular"
-                            android:imeOptions="actionDone"
+                            android:imeOptions="actionNext"
                             android:inputType="textMultiLine"
                             android:popupElevation="@dimen/_5sdp"
                             android:background="@null"

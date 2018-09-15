@@ -3,23 +3,29 @@ package com.app.chendurfincorp.activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.andrognito.flashbar.Flashbar;
 import com.app.chendurfincorp.R;
 import com.app.chendurfincorp.helper.Constants;
 import com.gmail.samehadar.iosdialog.IOSDialog;
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker;
 import com.treebo.internetavailabilitychecker.InternetConnectivityListener;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,6 +51,7 @@ public class ForgotActivity extends AppCompatActivity implements InternetConnect
     ExtendedEditText etPhone, etOtp, etPass;
     CircularProgressButton btnUpdate;
     FloatingActionButton fbBack;
+    Flashbar flashbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +62,8 @@ public class ForgotActivity extends AppCompatActivity implements InternetConnect
         internetAvailabilityChecker = InternetAvailabilityChecker.getInstance();
         internetAvailabilityChecker.addInternetConnectivityListener(this);
 
-        forgotLayout = findViewById(R.id.forgot_layout);
+        flashbar = networkStatus();
+
         tilPhone = findViewById(R.id.forgot_til_phone);
         tilOtp = findViewById(R.id.forgot_til_otp);
         tilPass = findViewById(R.id.forgot_til_pass);
@@ -64,6 +72,7 @@ public class ForgotActivity extends AppCompatActivity implements InternetConnect
         etPass = findViewById(R.id.forgot_et_pass);
         btnUpdate = findViewById(R.id.forgot_btn_update);
         fbBack = findViewById(R.id.forgot_btn_back);
+        forgotLayout = findViewById(R.id.forgot_layout);
 
         fbBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -80,22 +89,12 @@ public class ForgotActivity extends AppCompatActivity implements InternetConnect
                 if (id== EditorInfo.IME_ACTION_NEXT){
                     if (phone.length()==0){
                         etPhone.setError("Details Required");
-                        Snackbar snack = Snackbar.make(forgotLayout, "Phone Feild is Missing", Snackbar.LENGTH_SHORT);
-                        View view = snack.getView();
-                        TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
-                        tv.setTextColor(Color.WHITE);
-                        snack.show();
                     }else if (phone.length()<10) {
                         etPhone.setError("Enter Valid Number");
-                        Snackbar snack = Snackbar.make(forgotLayout, "Phone Feild requires 10 Digit", Snackbar.LENGTH_SHORT);
-                        View view = snack.getView();
-                        TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
-                        tv.setTextColor(Color.WHITE);
-                        snack.show();
                     }else {
                         IOSDialog iosDialog = new IOSDialog.Builder(ForgotActivity.this)
                                 .setTitle("Please Wait...")
-                                .setTitleColor(getResources().getColor(R.color.white))
+                                .setTitleColor(getResources().getColor(R.color.black))
                                 .setSpinnerColorRes(R.color.dark_gray)
                                 .setCancelable(true)
                                 .setSpinnerClockwise(true)
@@ -114,18 +113,8 @@ public class ForgotActivity extends AppCompatActivity implements InternetConnect
                 String phone = etPhone.getText().toString().trim();
                 if (phone.length()==0){
                     etPhone.setError("Details Required");
-                    Snackbar snack = Snackbar.make(forgotLayout, "Phone Feild is Missing", Snackbar.LENGTH_SHORT);
-                    view = snack.getView();
-                    TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
-                    tv.setTextColor(Color.WHITE);
-                    snack.show();
                 }else if (phone.length()<10) {
                     etPhone.setError("Enter Valid Number");
-                    Snackbar snack = Snackbar.make(forgotLayout, "Phone Feild requires 10 Digit", Snackbar.LENGTH_SHORT);
-                    view = snack.getView();
-                    TextView tv = view.findViewById(android.support.design.R.id.snackbar_text);
-                    tv.setTextColor(Color.WHITE);
-                    snack.show();
                 }else {
                     IOSDialog iosDialog = new IOSDialog.Builder(ForgotActivity.this)
                             .setTitle("Please Wait...")
@@ -164,17 +153,37 @@ public class ForgotActivity extends AppCompatActivity implements InternetConnect
     public void onInternetConnectivityChanged(boolean isConnected) {
 
         if (!isConnected) {
-            Snackbar snack = Snackbar.make(forgotLayout, "Check your Internet Connection", Snackbar.LENGTH_LONG);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.RED);
-            snack.show();
+           flashbar.show();
         } else if (isConnected){
-            Snackbar snack = Snackbar.make(forgotLayout, "Connected to the Internet", Snackbar.LENGTH_SHORT);
-            View view = snack.getView();
-            TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-            tv.setTextColor(Color.GREEN);
+           flashbar.dismiss();
         }
+    }
+
+    private Flashbar networkStatus() {
+        return new Flashbar.Builder(this)
+                .gravity(Flashbar.Gravity.BOTTOM)
+                .titleSizeInSp(18)
+                .messageSizeInSp(14)
+                .title("Network Status:")
+                .message("Check your Internet Connection")
+                .titleColorRes(R.color.red)
+                .messageColorRes(R.color.red)
+                .backgroundColorRes(R.color.translucent_black)
+                .showOverlay()
+                .titleTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .messageTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_regular.ttf"))
+                .primaryActionTextTypeface(Typeface.createFromAsset(getAssets(),"fonts/lato_bold.ttf"))
+                .primaryActionText("Goto")
+                .primaryActionTextColorRes(R.color.black)
+                .primaryActionTextSizeInSp(10)
+                .primaryActionTapListener(new Flashbar.OnActionTapListener() {
+                    @Override
+                    public void onActionTapped(@NotNull Flashbar bar) {
+                        bar.dismiss();
+                        startActivity(new Intent(Settings.ACTION_SETTINGS));
+                    }
+                })
+                .build();
     }
 
     private class update extends AsyncTask<String, Integer, String>{

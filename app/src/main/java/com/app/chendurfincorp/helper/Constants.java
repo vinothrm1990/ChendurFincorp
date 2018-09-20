@@ -25,6 +25,5 @@ public class Constants {
     public static String UPDATE= "update.php?";
     public static String ATTENDENCE= "attendence.php?";
     public static String LEAVESTATUS= "leavestatus.php?";
-    public static String PRESENT= "presentdays.php?";
-    public static String ABSENT= "absentdays.php?";
+    public static String PAYSLIP= "http://chendur.shadowws.in/view_emp_pay.php?";
 }

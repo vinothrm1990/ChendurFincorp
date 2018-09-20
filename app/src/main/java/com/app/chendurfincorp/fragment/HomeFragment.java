@@ -57,7 +57,7 @@ public class HomeFragment extends Fragment {
                 R.drawable.ic_query_home
 
         };
-        HomeMenu menu = new HomeMenu("Attendence Entry", icons[0]);
+        HomeMenu menu = new HomeMenu("Attendence Report", icons[0]);
         homeList.add(menu);
             menu = new HomeMenu("Leave Request", icons[1]);
             homeList.add(menu);

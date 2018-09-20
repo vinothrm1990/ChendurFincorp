@@ -35,6 +35,8 @@ import com.treebo.internetavailabilitychecker.InternetConnectivityListener;
 
 import org.jetbrains.annotations.NotNull;
 
+import spencerstudios.com.bungeelib.Bungee;
+
 public class HomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, InternetConnectivityListener {
 
@@ -163,18 +165,20 @@ public class HomeActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+        if (id == R.id.nav_attendence) {
+           startActivity(new Intent(HomeActivity.this, AttendenceActivity.class));
+            Bungee.inAndOut(HomeActivity.this);
+        } else if (id == R.id.nav_leave) {
+            startActivity(new Intent(HomeActivity.this, LeaveActivity.class));
+            Bungee.inAndOut(HomeActivity.this);
+        } else if (id == R.id.nav_payslip) {
+            startActivity(new Intent(HomeActivity.this, PayActivity.class));
+            Bungee.inAndOut(HomeActivity.this);
+        } else if (id == R.id.nav_query) {
+            startActivity(new Intent(HomeActivity.this, QueryActivity.class));
+            Bungee.inAndOut(HomeActivity.this);
+        } else if (id == R.id.nav_logout) {
+            logoutDialog();
         }
 
         drawer = findViewById(R.id.drawer_layout);

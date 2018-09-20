@@ -10,13 +10,33 @@
     <LinearLayout
         android:id="@+id/calendar_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <com.applandeo.materialcalendarview.CalendarView
-            android:id="@+id/calendar"
-            app:headerColor="@color/colorPrimaryDark"
-            app:todayLabelColor="@color/colorPrimaryDark"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:textColor="#FFF"
+            android:text="Month"
+            android:fontFamily="@font/lato_bold"
+            android:gravity="center"
+            android:textSize="23sp"
+            android:id="@+id/calander_title"
+            android:background="@color/colorPrimaryDark"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="50dp" />
+        <com.github.sundeepk.compactcalendarview.CompactCalendarView
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/calander_view"
+            android:layout_width="match_parent"
+            android:paddingRight="10dp"
+            android:fontFamily="@font/lato_bold"
+            android:paddingLeft="10dp"
+            android:layout_height="250dp"
+            app:compactCalendarTargetHeight="300dp"
+            app:compactCalendarTextSize="15sp"
+            app:compactCalendarBackgroundColor="#fff"
+            app:compactCalendarTextColor="#000"
+            app:compactCalendarCurrentSelectedDayBackgroundColor="@color/colorAccent"
+            app:compactCalendarCurrentDayBackgroundColor="@color/colorPrimaryDark"
+            app:compactCalendarMultiEventIndicatorColor="@color/black"/>
     </LinearLayout>
     <LinearLayout
         android:id="@+id/present_layout"
